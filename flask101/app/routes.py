@@ -57,19 +57,24 @@ def register():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
+    
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user = db.session.query(User).filter_by(username=username).first()
+        sql_query = text("SELECT * FROM User WHERE username = :username")
+        result = db.session.execute(sql_query, {'username':username})
+        user = result.fetchone()
+
         if user and check_password_hash(user.password_hash, password):
             login_user(user)
             session['logged_in'] = True
             session['username'] = username
             return redirect(url_for('index'))
         else:
-            return 'Invalid username/password'
+            flash('密碼錯誤')
+            return redirect(url_for('login'))
+
     return render_template('login.html', title='Log in', csrf_token=generate_csrf)
-        
 
 
 @app.route('/logout')
